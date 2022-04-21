@@ -1,0 +1,148 @@
+@charset "utf-8";
+/* CSS Document */
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+html {
+  margin: 0 auto;
+  padding: 0;
+  height: 100%;
+}
+
+img {
+  border: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+blockquote,
+p,
+pre,
+ul,
+ol,
+li,
+dl,
+dt,
+dd,
+form,
+fieldset,
+legend,
+button,
+input,
+textarea,
+th,
+td {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol,
+li {
+  list-style: none;
+}
+
+sup {
+  vertical-align: top;
+}
+
+sub {
+  vertical-align: bottom;
+}
+
+legend {
+  color: #000;
+}
+
+fieldset {
+  border: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font-size: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.clear {
+  clear: both;
+  height: 0;
+  font-size: 0;
+}
+
+.clearFix:after {
+  content: '.';
+  display: block;
+  clear: both;
+  height: 0;
+  visibility: hidden;
+}
+
+.clearFloat {
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* a:visited,
+a:link {
+  text-decoration: none;
+  color: #313131;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #f56924;
+} */
+
+/*---------------*/
+body,
+input,
+button,
+select,
+textarea {
+  font-family: 'Microsoft YaHei', 'MicrosoftJhengHei', serif;
+  font-size: 12px;
+  color: #313131;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: 100%;
+}
+
+address,
+cite,
+dfn,
+em,
+var {
+  font-style: normal;
+}
+
+pre,
+code,
+kbd,
+samp {
+  font-family: 'MicrosoftYaHei';
+}
+
+small {
+  font-size: 12px;
+}
