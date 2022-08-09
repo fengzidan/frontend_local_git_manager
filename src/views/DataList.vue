@@ -247,6 +247,7 @@ const pushItem = (item: GitPro) => {
           gitShell.fail({ cmd, out });
         } else {
           gitShell.success({ cmd, out });
+          getList();
         }
       })
       .catch((err: { error: string }) => {
@@ -279,6 +280,7 @@ const pullItem = (item: GitPro) => {
           gitShell.fail({ cmd, out });
         } else {
           gitShell.success({ cmd, out });
+          getList();
         }
       })
       .catch(() => {
