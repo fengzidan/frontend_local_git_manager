@@ -16,5 +16,12 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  max-height: 100vh;
+  max-width: 100vw;
+  min-height: 400px;
+  min-width: 900px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

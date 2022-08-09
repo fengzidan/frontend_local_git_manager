@@ -19,4 +19,20 @@ const header = ref(
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  .menu-content {
+    max-width: 200px;
+    overflow: auto;
+    // background-color: #f5f5f5;
+  }
+  .show-content {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+</style>

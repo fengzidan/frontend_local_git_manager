@@ -29,6 +29,7 @@ const tableOption: Ref<Array<tableOptionItem>> = ref([
   {
     prop: "remote",
     label: "git地址",
+    sortable: true,
     checked: false,
   },
   {
@@ -37,9 +38,10 @@ const tableOption: Ref<Array<tableOptionItem>> = ref([
     checked: false,
   },
   {
-    prop: "status",
+    prop: "isChanged",
     label: "git状态",
     checked: true,
+    sortable: true,
     width: 100,
   },
   {
@@ -91,17 +93,16 @@ getList();
 const searchLabel = ref("");
 const searchStatus: Ref<Array<string>> = ref([]);
 const searchPath: Ref<Array<string>> = ref([]);
-const sortOption: Array<tableSortOption> = [];
 const remoteChangeStatus: Ref<string | boolean> = ref("");
-const sortTable = ({ prop, order }: tableSortOption) => {
-  const itemIdx = sortOption.findIndex((item) => item.prop === prop);
-  if (itemIdx !== -1) {
-    sortOption.splice(itemIdx, 1);
-  }
-  if (order !== null) {
-    sortOption.push({ prop, order });
-  }
-};
+// const sortTable = ({ prop, order }: tableSortOption) => {
+//   const itemIdx = sortOption.findIndex((item) => item.prop === prop);
+//   if (itemIdx !== -1) {
+//     sortOption.splice(itemIdx, 1);
+//   }
+//   if (order !== null) {
+//     sortOption.push({ prop, order });
+//   }
+// };
 // 展示用数据
 const tableOptionShow = computed(() => {
   return tableOption.value.filter((item) => item.checked);
@@ -109,11 +110,12 @@ const tableOptionShow = computed(() => {
 const remoteProShow = computed(() => {
   let showData: Array<GitPro> = [];
   const dataSrc = [...remoteProList.value];
+  const searchLabelVal = searchLabel.value.trim().toLowerCase();
   showData = dataSrc.filter(
     (item) =>
-      item.name.indexOf(searchLabel.value) >= 0 ||
-      item.remote.indexOf(searchLabel.value) >= 0 ||
-      item.path.indexOf(searchLabel.value) >= 0
+      item.name.toLowerCase().indexOf(searchLabelVal) >= 0 ||
+      item.remote.toLowerCase().indexOf(searchLabelVal) >= 0 ||
+      item.path.toLowerCase().indexOf(searchLabelVal) >= 0
   );
   if (searchStatus.value.length > 0) {
     showData = showData.filter(
@@ -122,22 +124,22 @@ const remoteProShow = computed(() => {
         searchStatus.value.indexOf(`${item.gitShell.status}`) !== -1
     );
   }
-  if (sortOption.length > 0) {
-    sortOption.forEach(({ prop, order }) => {
-      switch (prop) {
-        case "name":
-          switch (order) {
-            case "ascending":
-              showData = showData.sort((a, b) => (a.name > b.name ? -1 : 1));
-              break;
-            case "descending":
-              showData = showData.sort((a, b) => (a.name > b.name ? 1 : -1));
-              break;
-          }
-          break;
-      }
-    });
-  }
+  // if (sortOption.length > 0) {
+  //   sortOption.forEach(({ prop, order }) => {
+  //     switch (prop) {
+  //       case "name":
+  //         switch (order) {
+  //           case "ascending":
+  //             showData = showData.sort((a, b) => (a.name > b.name ? -1 : 1));
+  //             break;
+  //           case "descending":
+  //             showData = showData.sort((a, b) => (a.name > b.name ? 1 : -1));
+  //             break;
+  //         }
+  //         break;
+  //     }
+  //   });
+  // }
   if (searchPath.value.length > 0) {
     showData = showData.filter((item) => {
       const dirList = item.path.split("/");
@@ -256,9 +258,11 @@ const pushItem = (item: GitPro) => {
   }
 };
 const pushData = () => {
-  githubProMul.forEach((item) => {
-    pushItem(item);
-  });
+  githubProMul
+    .filter((item) => item.remote !== "")
+    .forEach((item) => {
+      pushItem(item);
+    });
 };
 // pull操作
 const pullItem = (item: GitPro) => {
@@ -289,9 +293,11 @@ const pullItem = (item: GitPro) => {
   }
 };
 const pullData = () => {
-  githubProMul.forEach((item) => {
-    pullItem(item);
-  });
+  githubProMul
+    .filter((item) => item.remote !== "")
+    .forEach((item) => {
+      pullItem(item);
+    });
 };
 </script>
 
@@ -361,10 +367,18 @@ const pullData = () => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button class="right-item btn-multiple" @click="pushData">
+        <el-button
+          type="primary"
+          class="right-item btn-multiple"
+          @click="pushData"
+        >
           一键 push</el-button
         >
-        <el-button class="right-item btn-multiple" @click="pullData">
+        <el-button
+          type="primary"
+          class="right-item btn-multiple"
+          @click="pullData"
+        >
           一键 pull</el-button
         >
         <el-button class="right-item btn-delete" @click="deleteData"
@@ -392,8 +406,9 @@ const pullData = () => {
       class="table-content"
       :data="remoteProShow"
       :page-show="false"
+      :stripe="true"
+      :default-sort="{ prop: 'isChanged', order: 'descending' }"
       @select="selectMulData"
-      @sort="sortTable"
     >
       <el-table-column type="selection" width="55" />
       <el-table-column type="index" width="60" align="center" label="序号">
@@ -438,7 +453,7 @@ const pullData = () => {
               </el-tag>
             </template>
           </template>
-          <template v-else-if="row.prop === 'status'">
+          <template v-else-if="row.prop === 'isChanged'">
             <el-popover
               v-if="scope.row.isChanged"
               placement="bottom"
@@ -468,6 +483,12 @@ const pullData = () => {
               ></el-option>
             </el-select>
           </template>
+          <template v-else-if="row.prop === 'name'">
+            {{ scope.row.name }}
+            <template v-if="scope.row.remote === ''">
+              <label for="" style="color: #f56c6c;">(无remote地址)</label>
+            </template>
+          </template>
           <template v-else>
             {{ scope.row[row.prop] || "-" }}
           </template>
@@ -485,16 +506,18 @@ const pullData = () => {
       <el-table-column label="操作" width="270">
         <template #default="scope">
           <el-button
+            type="primary"
             class="btn-cloud"
             @click="pushItem(scope.row)"
-            :disabled="scope.row.gitShell.ifRuning"
+            :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
           >
             push
           </el-button>
           <el-button
+            type="primary"
             class="btn-cloud"
             @click="pullItem(scope.row)"
-            :disabled="scope.row.gitShell.ifRuning"
+            :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
           >
             pull
           </el-button>
@@ -540,6 +563,11 @@ const pullData = () => {
   // border: 1px solid #ddd;
   box-shadow: 0 0 3px 0 #7371fc63;
   border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   .operation-top {
     display: flex;
     align-items: center;
@@ -570,19 +598,21 @@ const pullData = () => {
     }
   }
   .table-content {
+    flex: 1;
     border: 1px solid #eee;
     margin-top: 1vh;
+    overflow: auto;
   }
 }
 .btn-multiple,
 .btn-multiple:hover {
-  background-color: #7371fc;
-  color: #fff;
+  // background-color: #7371fc;
+  // color: #fff;
 }
 .btn-cloud,
 .btn-cloud:hover {
-  background-color: #918ef4;
-  color: #fff;
+  // background-color: #918ef4;
+  // color: #fff;
 }
 .btn-delete,
 .btn-delete:hover {

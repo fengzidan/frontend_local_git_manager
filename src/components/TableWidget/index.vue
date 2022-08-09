@@ -26,6 +26,13 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  defaultSort: {
+    type: Object,
+  },
+  stripe: {
+    type: Boolean,
+    default: true,
+  },
 });
 const emits = defineEmits(["select", "change", "sort"]);
 const pageNum = computed(() => props.pageOption.pageNum);
@@ -59,6 +66,8 @@ const handleClickRow = (row: any) => {
     <el-table
       ref="multipleTableRef"
       :data="data"
+      :default-sort="defaultSort"
+      :stripe="stripe"
       @selection-change="handleSelectionChange"
       @sort-change="handleSort"
       @row-click="handleClickRow"
