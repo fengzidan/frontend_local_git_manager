@@ -1,45 +1,98 @@
 <script lang="ts" setup>
-import { computed, getCurrentInstance, onMounted, Ref, ref } from "vue";
+import { computed, getCurrentInstance, onMounted, Ref, ref, warn } from "vue";
 import GitPro from "../entity/GitPro";
-import { SHELL_STATUS } from "../entity/GitShell";
+import { SHELL_STATUS } from "../entity/ShellObj";
 import TableWidget from "@/components/TableWidget/index.vue";
 import ShellRes from "./ShellRes.vue";
 import GitProject from "./GitProject.vue";
+import PathWidget from "@/components/PathWidget/Dialog.vue";
+import { success } from "../utils/assist";
+import { IRemotePro } from "../entity/RemotePro";
 
 const request = getCurrentInstance()?.appContext.config.globalProperties.$api;
 
 // 获取数据
-const githubProList: Ref<Array<GitPro>> = ref([]);
-const tableOption: Array<tableOptionItem> = [
+const remoteProList: Ref<Array<GitPro>> = ref([]);
+const tableOption: Ref<Array<tableOptionItem>> = ref([
   {
     prop: "name",
     label: "项目名称",
     sortable: true,
+    checked: true,
   },
   {
-    prop: "github",
-    label: "(分支)git地址",
+    prop: "branches",
+    label: "分支",
+    checked: true,
+    width: 150,
   },
   {
-    prop: "local",
+    prop: "remote",
+    label: "git地址",
+    checked: false,
+  },
+  {
+    prop: "path",
     label: "本地地址",
+    checked: false,
   },
   {
     prop: "status",
-    label: "状态",
+    label: "git状态",
+    checked: true,
+    width: 100,
+  },
+  {
+    prop: "shellStatus",
+    label: "命令状态",
+    checked: true,
+    width: 100,
+  },
+]);
+// 每个项目的当前branch
+const remoteBranch = ref({});
+const remoteChanged = [
+  {
+    label: "有变更",
+    value: true,
+  },
+  {
+    label: "无",
+    value: false,
   },
 ];
+// 根据本地路径筛选
+const localPathList = computed(() => {
+  const dirSet = new Set(
+    remoteProList.value.map((item) => {
+      const dirList = item.path.split("/");
+      dirList.pop();
+      return dirList.join("/");
+    })
+  );
+  return Array.from(dirSet).map((dir) => {
+    return {
+      label: dir.split("/").pop(),
+      value: dir,
+    };
+  });
+});
 const getList = () => {
-  githubProList.value = [];
-  request.project.getData().then((res: Response) => {
-    githubProList.value = res.data.map((item: GitPro) => new GitPro(item));
+  remoteProList.value = [];
+  request.project.list().then((res: Response) => {
+    remoteProList.value = res.data.map((item: GitPro) => new GitPro(item));
+    remoteProList.value.forEach((item) => {
+      remoteBranch.value[item.id] = item.branch;
+    });
   });
 };
 getList();
 // 数据过滤、数据排序
 const searchLabel = ref("");
 const searchStatus: Ref<Array<string>> = ref([]);
+const searchPath: Ref<Array<string>> = ref([]);
 const sortOption: Array<tableSortOption> = [];
+const remoteChangeStatus: Ref<string | boolean> = ref("");
 const sortTable = ({ prop, order }: tableSortOption) => {
   const itemIdx = sortOption.findIndex((item) => item.prop === prop);
   if (itemIdx !== -1) {
@@ -50,14 +103,17 @@ const sortTable = ({ prop, order }: tableSortOption) => {
   }
 };
 // 展示用数据
-const githubProShow = computed(() => {
+const tableOptionShow = computed(() => {
+  return tableOption.value.filter((item) => item.checked);
+});
+const remoteProShow = computed(() => {
   let showData: Array<GitPro> = [];
-  const dataSrc = [...githubProList.value];
+  const dataSrc = [...remoteProList.value];
   showData = dataSrc.filter(
     (item) =>
       item.name.indexOf(searchLabel.value) >= 0 ||
-      item.gitUrl.indexOf(searchLabel.value) >= 0 ||
-      item.local.indexOf(searchLabel.value) >= 0
+      item.remote.indexOf(searchLabel.value) >= 0 ||
+      item.path.indexOf(searchLabel.value) >= 0
   );
   if (searchStatus.value.length > 0) {
     showData = showData.filter(
@@ -82,6 +138,19 @@ const githubProShow = computed(() => {
       }
     });
   }
+  if (searchPath.value.length > 0) {
+    showData = showData.filter((item) => {
+      const dirList = item.path.split("/");
+      dirList.pop();
+      const dir = dirList.join("/");
+      return searchPath.value.indexOf(dir) >= 0;
+    });
+  }
+  if (remoteChangeStatus.value !== "") {
+    showData = showData.filter((item) => {
+      return item.isChanged === remoteChangeStatus.value;
+    });
+  }
   return showData;
 });
 
@@ -89,8 +158,12 @@ const githubProShow = computed(() => {
 let formData: Ref<GitPro | undefined> = ref(undefined);
 const dialogVisible = ref(false);
 const editing = ref(false);
+const batching = ref(false);
 const addItem = () => {
   dialogVisible.value = true;
+};
+const addBatch = () => {
+  batching.value = true;
 };
 const gitProjectRef = ref();
 const editItem = (item: GitPro) => {
@@ -111,6 +184,22 @@ const submitData = () => {
     getList();
     dialogVisible.value = false;
   });
+};
+const submitBatchData = (pathObj: IPath) => {
+  request.project.batch(pathObj).then((res: Response) => {
+    const { data } = res;
+    if (data === true) {
+      success("导入成功");
+      getList();
+    } else {
+      warn(
+        `以下项目未导入成功：${data
+          .map((item: IRemotePro) => item.name)
+          .join(", \n")}`
+      );
+    }
+  });
+  batching.value = false;
 };
 const handleClose = (done: () => void) => {
   formData.value = undefined;
@@ -139,21 +228,29 @@ const pushItem = (item: GitPro) => {
     const { gitShell } = item;
     gitShell.run();
     if (!gitShell.comment) {
-      gitShell.comment = "提交";
+      warn("请填写提交描述");
+      return;
     }
     request.shell
-      .push(item)
+      .push({
+        id: item.id,
+        path: item.path,
+        branch: item.branch,
+        comment: item.gitShell.comment,
+      })
       .then((res: Response) => {
         const { data } = res;
-        const out = data.out + "\n" + data.stderr;
-        if (data.err) {
-          gitShell.fail({ cmd: data.cmd, out });
+        const cmd =
+          typeof data.shell !== "string" ? data.shell.join("\n") : data.shell;
+        const out = data.result.stdout + "\n" + data.result.stderr;
+        if (data.result.error) {
+          gitShell.fail({ cmd, out });
         } else {
-          gitShell.success({ cmd: data.cmd, out });
+          gitShell.success({ cmd, out });
         }
       })
       .catch((err: { error: string }) => {
-        gitShell.fail({ cmd: "git push one", out: err.error });
+        gitShell.fail({ cmd: "服务器错误", out: "fail" });
       });
   }
 };
@@ -168,18 +265,24 @@ const pullItem = (item: GitPro) => {
     const { gitShell } = item;
     gitShell.run();
     request.shell
-      .pull(item)
+      .pull({
+        id: item.id,
+        path: item.path,
+        branch: item.branch,
+      })
       .then((res: Response) => {
         const { data } = res;
-        const out = data.out + "\n" + data.stderr;
-        if (data.err) {
-          gitShell.fail({ cmd: data.cmd, out });
+        const cmd =
+          typeof data.shell !== "string" ? data.shell.join("\n") : data.shell;
+        const out = data.result.stdout + "\n" + data.result.stderr;
+        if (data.result.error) {
+          gitShell.fail({ cmd, out });
         } else {
-          gitShell.success({ cmd: data.cmd, out });
+          gitShell.success({ cmd, out });
         }
       })
       .catch(() => {
-        gitShell.fail({ cmd: "git pull one", out: "fail" });
+        gitShell.fail({ cmd: "服务器错误", out: "fail" });
       });
   }
 };
@@ -188,7 +291,6 @@ const pullData = () => {
     pullItem(item);
   });
 };
-
 </script>
 
 <template>
@@ -199,20 +301,47 @@ const pullData = () => {
           class="left-item"
           v-model="searchLabel"
           placeholder="搜索"
+          clearable
         ></el-input>
+        <el-select
+          class="left-item"
+          v-model="remoteChangeStatus"
+          placeholder="git状态"
+          clearable
+        >
+          <el-option
+            v-for="(item, idx) in remoteChanged"
+            :key="idx"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
         <el-select
           class="left-item"
           v-model="searchStatus"
           multiple
-          collapse-tags
-          collapse-tags-tooltip
-          placeholder="状态"
+          placeholder="shell状态"
+          clearable
         >
           <el-option
             v-for="(item, key) in SHELL_STATUS"
             :key="item.color"
             :label="item.label"
             :value="key"
+          />
+        </el-select>
+        <el-select
+          class="left-item"
+          v-model="searchPath"
+          multiple
+          placeholder="本地路径"
+          clearable
+        >
+          <el-option
+            v-for="(item, idx) in localPathList"
+            :key="idx"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </div>
@@ -224,7 +353,9 @@ const pullData = () => {
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item @click="addItem">新增单个项目</el-dropdown-item>
-              <el-dropdown-item>本地批量导入</el-dropdown-item>
+              <el-dropdown-item @click="addBatch"
+                >本地批量导入</el-dropdown-item
+              >
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -237,11 +368,27 @@ const pullData = () => {
         <el-button class="right-item btn-delete" @click="deleteData"
           >删除</el-button
         >
+        <el-popover placement="bottom" :width="200" trigger="hover">
+          <el-checkbox
+            v-for="item in tableOption"
+            :key="item.prop"
+            v-model="item.checked"
+            :label="item.label"
+          />
+          <template #reference>
+            <span class="link-span">
+              <svg-icon icon="setup"></svg-icon>
+            </span>
+          </template>
+        </el-popover>
+        <span class="link-span">
+          <svg-icon icon="refresh" @click="getList"></svg-icon>
+        </span>
       </div>
     </div>
     <table-widget
       class="table-content"
-      :data="githubProShow"
+      :data="remoteProShow"
       :page-show="false"
       @select="selectMulData"
       @sort="sortTable"
@@ -250,7 +397,7 @@ const pullData = () => {
       <el-table-column type="index" width="60" align="center" label="序号">
       </el-table-column>
       <el-table-column
-        v-for="row in tableOption"
+        v-for="row in tableOptionShow"
         :key="row.prop"
         :prop="row.prop"
         :label="row.label"
@@ -259,10 +406,7 @@ const pullData = () => {
         :sortable="row.sortable"
       >
         <template #default="scope">
-          <template v-if="row.prop === 'github'">
-            ({{ scope.row.gitBranch }}){{ scope.row.gitUrl }}
-          </template>
-          <template v-else-if="row.prop === 'status'">
+          <template v-if="row.prop === 'shellStatus'">
             <template v-if="scope.row.gitShell.ifEnd">
               <el-popover placement="bottom" :width="200" trigger="click">
                 <shell-res
@@ -292,12 +436,42 @@ const pullData = () => {
               </el-tag>
             </template>
           </template>
+          <template v-else-if="row.prop === 'status'">
+            <el-popover
+              v-if="scope.row.isChanged"
+              placement="bottom"
+              :width="200"
+              trigger="click"
+            >
+              <shell-res
+                shell="git status"
+                :result="scope.row.status"
+              ></shell-res>
+              <template #reference>
+                <el-tag class="tag-status"
+                  >有变更 <svg-icon icon="info"></svg-icon
+                ></el-tag>
+              </template>
+            </el-popover>
+            <el-tag v-else style="color: #333;">无</el-tag>
+          </template>
+          <template v-else-if="row.prop === 'branches'">
+            <!-- <el-select v-model="remoteBranch[scope.row.id]"> -->
+            <el-select v-model="scope.row.branch">
+              <el-option
+                v-for="item in scope.row.branches"
+                :key="item"
+                :value="item"
+                :label="item"
+              ></el-option>
+            </el-select>
+          </template>
           <template v-else>
             {{ scope.row[row.prop] || "-" }}
           </template>
         </template>
       </el-table-column>
-      <el-table-column label="描述">
+      <el-table-column label="描述" width="300">
         <template #default="scope">
           <el-input
             v-model="scope.row.gitShell.comment"
@@ -354,6 +528,7 @@ const pullData = () => {
       </span>
     </template>
   </el-dialog>
+  <path-widget :choosing="batching" @confirm="submitBatchData"></path-widget>
 </template>
 
 <style lang="scss" scoped>
@@ -371,14 +546,24 @@ const pullData = () => {
     .right {
       display: flex;
       align-items: stretch;
+      .left-item {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
       .left-item + .left-item {
         margin-left: 12px;
       }
     }
     .right {
+      align-items: center;
       justify-content: flex-end;
       .right-item + .right-item {
         margin-left: 12px;
+      }
+      .link-span {
+        font-size: 1.6vh;
       }
     }
   }

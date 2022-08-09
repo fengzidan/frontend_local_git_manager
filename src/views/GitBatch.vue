@@ -87,11 +87,8 @@ function choosePath(pathObj: IPath) {
     <el-form-item label="远程地址" prop="remote">
       <el-input v-model="formData.remote"></el-input>
     </el-form-item>
-    <el-form-item label="本地分支" prop="branch">
+    <el-form-item label="远程分支" prop="branch">
       <el-input v-model="formData.branch"></el-input>
-    </el-form-item>
-    <el-form-item label="本地分支列表">
-      <el-input v-model="formData.branches" disabled></el-input>
     </el-form-item>
   </el-form>
   <path-widget :choosing="choosing" @confirm="choosePath"></path-widget>

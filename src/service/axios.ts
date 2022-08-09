@@ -92,8 +92,15 @@ let instance = axios.create({
  */
 instance.interceptors.request.use(
   (config) => {
-    showLoading();
-    let { method } = config;
+    let { url, method } = config;
+    switch (url) {
+      case "/shell/pull/git":
+      case "/shell/push/git":
+        break;
+      default:
+        showLoading();
+        break;
+    }
     // // post 方法统一用json格式传数据
     // method = method && method.toLowerCase();
     switch (method?.toLowerCase()) {
@@ -165,7 +172,7 @@ instance.interceptors.response.use(
         clearToken();
       }
     }
-    err.error = `${err.stack}\n${err.message}`
+    err.error = `${err.stack}\n${err.message}`;
     return Promise.reject(err);
   }
 );

@@ -4,6 +4,7 @@ declare interface tableOptionItem {
   width?: string | number;
   align?: "center" | "left" | "right";
   sortable?: true;
+  checked: boolean;
 }
 
 declare interface tableSortOption {
