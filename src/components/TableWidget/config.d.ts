@@ -3,7 +3,7 @@ declare interface tableOptionItem {
   label: string;
   width?: string | number;
   align?: "center" | "left" | "right";
-  sortable?: true;
+  sortable?: boolean;
   checked: boolean;
 }
 

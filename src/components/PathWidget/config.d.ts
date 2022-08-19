@@ -4,4 +4,9 @@ declare interface IPath {
   data: Array<any>;
   isSvn: boolean;
   isGit: boolean;
+
+  hidden: boolean;
+  isDir: boolean;
+  isVue: boolean;
+  isNode: boolean;
 }

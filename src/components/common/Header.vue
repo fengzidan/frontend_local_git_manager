@@ -6,8 +6,8 @@
     </div>
     <div class="info-content">
       <div v-if="header.showUser" class="info-item user-content">
-        <img class="user-portrait" :src="user.portrait" />
-        <div class="user-info">{{ user.name }}</div>
+        <img class="user-portrait" :src="user && user.portrait" />
+        <div class="user-info">{{ user && user.name }}</div>
       </div>
       <div v-if="header.showCtrl" class="info-item system-content">
         <!-- <icon-ctrl-widget
@@ -18,25 +18,27 @@
         >
         </icon-ctrl-widget> -->
       </div>
+      <slot></slot>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "@vue/runtime-core";
+import { computed, ComputedRef } from "@vue/runtime-core";
 import Header from "../../entity/Header";
+import User from "../../entity/User";
 // import IconCtrlWidget from "../CtrlWidget/IconCtrlWidget.vue";
 const props = defineProps({
   header: {
     type: Header,
     default: () => {
-      return new Header({ title: '' });
+      return new Header({ title: "" });
     },
   },
 });
 
 const emit = defineEmits(["change", "delete"]);
-const user = computed(() => props.header.user);
+const user: ComputedRef<User | undefined> = computed(() => props.header.user);
 </script>
 
 <style lang="scss" scoped>

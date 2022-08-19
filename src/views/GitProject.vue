@@ -59,7 +59,7 @@ function choosePath(pathObj: IPath) {
     warn("选择的地址不是远程地址(git或svn), 请查询选择");
     return;
   }
-  request.project.info(pathObj).then((res) => {
+  request.project.info(pathObj).then((res: Response) => {
     const { data } = res;
     const gitPro = data.data;
     formData.path = gitPro.path;

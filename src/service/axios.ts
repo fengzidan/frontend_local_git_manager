@@ -83,7 +83,7 @@ function setParams(data: any) {
 }
 
 let instance = axios.create({
-  baseURL: "/api",
+  baseURL: "/remote",
   timeout: 100 * 1000,
 });
 

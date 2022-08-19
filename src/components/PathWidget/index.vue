@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { getCurrentInstance, computed, reactive, ref, watch } from "vue";
+import { getCurrentInstance, computed, reactive, Ref, ref, watch } from "vue";
 
 const request = getCurrentInstance()?.appContext.config.globalProperties.$api;
 
 let curPathObj: IPath;
 const curPath = ref("");
-const folderList = ref([]);
+const folderList: Ref<Array<IPath>> = ref([]);
 const pathEditing = ref(false);
 
 const pathList = computed(() => {
@@ -16,16 +16,15 @@ const pathList = computed(() => {
   return pathList;
 });
 const showFolderList = computed(() => {
-  return folderList.value.filter((item) => item.isDir);
+  return folderList.value.filter((item: IPath) => item.isDir);
 });
 
 const emits = defineEmits(["confirm"]);
 
 async function getFolder() {
-  const params = {};
-  if (curPath.value !== "") {
-    params.path = curPath.value;
-  }
+  const params: { path: string } = {
+    path: curPath.value || "",
+  };
   const res = await request.path.list(params);
   const { path, data } = res.data;
   curPath.value = path;
@@ -40,7 +39,7 @@ function changePath(path = curPath.value) {
   getFolder();
 }
 
-function clickPathItem(pathIdx) {
+function clickPathItem(pathIdx: number) {
   curPath.value = pathList.value.slice(0, pathIdx + 1).join("/");
   getFolder();
 }

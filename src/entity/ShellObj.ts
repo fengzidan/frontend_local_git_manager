@@ -1,4 +1,6 @@
-const SHELL_STATUS = {
+const SHELL_STATUS: {
+  [key: string]: { label: string; color: string };
+} = {
   "-1": {
     label: "失败",
     color: "#ff6b6b",
@@ -42,7 +44,7 @@ export default class ShellObj {
 
   success({ cmd = "", out = "" }) {
     this.status = 1;
-    this.shell = cmd
+    this.shell = cmd;
     this.out = out;
   }
 

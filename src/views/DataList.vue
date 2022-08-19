@@ -52,7 +52,7 @@ const tableOption: Ref<Array<tableOptionItem>> = ref([
   },
 ]);
 // 每个项目的当前branch
-const remoteBranch = ref({});
+const remoteBranch: Ref<{ [idx: string]: string }> = ref({});
 const remoteChanged = [
   {
     label: "有变更",
@@ -83,8 +83,10 @@ const getList = () => {
   remoteProList.value = [];
   request.project.list().then((res: Response) => {
     remoteProList.value = res.data.map((item: GitPro) => new GitPro(item));
-    remoteProList.value.forEach((item) => {
-      remoteBranch.value[item.id] = item.branch;
+    remoteProList.value.forEach((item: IRemotePro) => {
+      if (item.id && item.branch) {
+        remoteBranch.value[item.id] = item.branch;
+      }
     });
   });
 };
@@ -210,7 +212,7 @@ const handleClose = (done: () => void) => {
 
 // 多选操作
 let githubProMul: Array<GitPro> = [];
-const selectMulData = (value = []) => {
+const selectMulData = (value: Array<GitPro> = []) => {
   githubProMul = value;
 };
 // 删除数据
@@ -393,12 +395,12 @@ const pullData = () => {
           />
           <template #reference>
             <span class="link-span">
-              <svg-icon icon="setup"></svg-icon>
+              <svg-icon icon="table"></svg-icon>
             </span>
           </template>
         </el-popover>
         <span class="link-span">
-          <svg-icon icon="refresh" @click="getList"></svg-icon>
+          <svg-icon icon="reupload" @click="getList"></svg-icon>
         </span>
       </div>
     </div>
@@ -408,7 +410,7 @@ const pullData = () => {
       :page-show="false"
       :stripe="true"
       :default-sort="{ prop: 'isChanged', order: 'descending' }"
-      @select="selectMulData"
+      @selection-change="selectMulData"
     >
       <el-table-column type="selection" width="55" />
       <el-table-column type="index" width="60" align="center" label="序号">
