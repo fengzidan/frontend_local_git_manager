@@ -4,7 +4,7 @@
   </svg>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { computed } from "@vue/runtime-core";
 const props = defineProps({
   icon: {

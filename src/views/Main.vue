@@ -84,7 +84,7 @@ const submitRemind = () => {
   }
   request.remind.edit(formData).then((res: Response) => {
     if (res.code === 200) {
-      success("修改成功, 5分钟后生效");
+      success("修改成功, 已生效");
       getRemindInfo();
     }
   });
@@ -143,7 +143,7 @@ getRemindInfo();
 
 <template>
   <header-widget ref="root" :header="header">
-    <el-popover placement="bottom" :width="200" trigger="click">
+    <el-popover placement="bottom" :width="500" trigger="click">
       <el-tabs
         type="border-card"
         v-model="curRemindInfo.method"
@@ -257,11 +257,11 @@ getRemindInfo();
         </el-tab-pane>
       </el-tabs>
       <template #reference>
-        <svg-icon icon="remind"></svg-icon>
+        <svg-icon icon="remind" style="cursor: pointer"></svg-icon>
       </template>
     </el-popover>
   </header-widget>
-  <div class="main-content">
+  <div class="container">
     <div class="menu-content"></div>
     <div class="show-content">
       <router-view></router-view>
@@ -270,7 +270,7 @@ getRemindInfo();
 </template>
 
 <style lang="scss" scoped>
-.main-content {
+.container {
   flex: 1;
   display: flex;
   align-items: stretch;

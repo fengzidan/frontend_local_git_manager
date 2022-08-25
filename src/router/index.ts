@@ -13,12 +13,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("../App.vue"),
     children: [
       {
-        path: "",
+        path: "/",
         name: "main",
         component: () => import("../views/Main.vue"),
         children: [
           {
-            path: "",
+            path: "/",
             name: "DataList",
             component: () => import("../views/DataList.vue"),
           },
@@ -35,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history: createWebHistory(
-    process.env.NODE_ENV === "production" ? "/" : "/remote-manager"
+    process.env.NODE_ENV === "production" ? "/remote-manager/" : "/"
   ),
   routes,
 });

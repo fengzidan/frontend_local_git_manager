@@ -24,9 +24,10 @@ const modules: modules = {};
 
 const modulesGlob = import.meta.glob("./apis/*.ts");
 for (const path in modulesGlob) {
-  const res = await modulesGlob[path]();
-  const name = path.split("/")[2].replace('.ts', '');
-  modules[name] = res;
+  modulesGlob[path]().then(res => {
+    const name = path.split("/")[2].replace('.ts', '');
+    modules[name] = res;
+  });
 }
 export default modules;
 

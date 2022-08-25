@@ -1,6 +1,6 @@
 <template>
   <div class="header-widget">
-    <div class="main-content">
+    <div class="main-container">
       <div v-if="header.logo" class="logo">{{ header.logo }}</div>
       <div class="title">{{ header.title }}</div>
     </div>
@@ -53,7 +53,7 @@ const user: ComputedRef<User | undefined> = computed(() => props.header.user);
   box-shadow: 0 0 5px 0 #ddd;
   background-color: #141b41;
   color: #98b9f2;
-  .main-content {
+  .main-container {
     flex: 1;
     display: flex;
     align-items: center;

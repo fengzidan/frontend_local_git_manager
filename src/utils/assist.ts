@@ -1,5 +1,6 @@
 import { ElLoading, ElMessage } from "element-plus";
 import { LoadingInstance } from "element-plus/es/components/loading/src/loading";
+import 'element-plus/es/components/message/style/css'
 
 let loading: LoadingInstance | null = null;
 

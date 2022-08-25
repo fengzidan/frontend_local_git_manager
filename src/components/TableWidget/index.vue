@@ -34,7 +34,12 @@ const props = defineProps({
     default: true,
   },
 });
-const emits = defineEmits(["select", "change", "sort"]);
+// const emits = defineEmits(["select", "change", "sort"]);
+const emits = defineEmits<{
+  (e: "select", arr: Array<any>): void;
+  (e: "change", pageNum: Number, pageSize: Number): void;
+  (e: "sort", data: tableSortOption): void;
+}>();
 const pageNum = computed(() => props.pageOption.pageNum);
 const pageSize = computed(() => props.pageOption.pageSize);
 const total = computed(() => props.pageOption.total);
@@ -42,13 +47,14 @@ const total = computed(() => props.pageOption.total);
 const multipleTableRef = ref<InstanceType<typeof ElTable>>();
 const handleSelectionChange = (selection = []) => {
   multipleSelection.value = selection;
-  emits("select", selection);
+  const list = selection.map(item => new GitPro(item))
+  emits("select", list);
 };
 const handleSizeChange = (pageSize: Number) => {
-  emits("change", pageNum, pageSize);
+  emits("change", pageNum.value, pageSize);
 };
 const handleCurrentChange = (pageNum: Number) => {
-  emits("change", pageNum, pageSize);
+  emits("change", pageNum, pageSize.value);
 };
 const handleSort = ({ prop, order }: tableSortOption) => {
   emits("sort", { prop, order });

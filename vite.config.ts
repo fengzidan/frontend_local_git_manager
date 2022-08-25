@@ -3,7 +3,10 @@ import vue from "@vitejs/plugin-vue";
 import { join } from "path";
 import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
 import topLevelAwait from "vite-plugin-top-level-await";
-import legacy from '@vitejs/plugin-legacy'
+import legacy from "@vitejs/plugin-legacy";
+import AutoImport from "unplugin-auto-import/vite";
+import Components from "unplugin-vue-components/vite";
+import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 
 function resolve(dir) {
   return join(__dirname, "./", dir);
@@ -15,7 +18,7 @@ export default defineConfig({
     vue(),
     createSvgIconsPlugin({
       // 指定需要缓存的图标文件夹
-      iconDirs: [resolve("src/plugins/icon/svg/")],
+      iconDirs: [resolve("src/components/icon/svg/")],
       // 指定symbolId格式
       symbolId: "icon-[name]",
     }),
@@ -27,11 +30,18 @@ export default defineConfig({
       promiseImportName: (i) => `__tla_${i}`,
     }),
     legacy({
-      polyfills: ['es.promise.finally', 'es/map', 'es/set'],
-      modernPolyfills: ['es.promise.finally']
-    })
+      polyfills: ["es.promise.finally", "es/map", "es/set"],
+      modernPolyfills: ["es.promise.finally"],
+    }),
+    // element-plus 按需引入
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+    }),
   ],
-  base: "./",
+  base: process.env.NODE_ENV === "production" ? "/remote-manager/" : "./",
   build: {
     chunkSizeWarningLimit: 1000,
     sourcemap: true,

@@ -213,6 +213,7 @@ const handleClose = (done: () => void) => {
 // 多选操作
 let githubProMul: Array<GitPro> = [];
 const selectMulData = (value: Array<GitPro> = []) => {
+  console.log("check all");
   githubProMul = value;
 };
 // 删除数据
@@ -260,6 +261,7 @@ const pushItem = (item: GitPro) => {
   }
 };
 const pushData = () => {
+  console.log(githubProMul);
   githubProMul
     .filter((item) => item.remote !== "")
     .forEach((item) => {
@@ -358,7 +360,7 @@ const pullData = () => {
       <div class="right">
         <el-dropdown class="right-item">
           <el-button class="btn-multiple" type="primary">
-            新增<el-icon class="el-icon--right"><arrow-down /></el-icon>
+            新增 <svg-icon icon="down"></svg-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
@@ -400,9 +402,147 @@ const pullData = () => {
           </template>
         </el-popover>
         <span class="link-span">
-          <svg-icon icon="reupload" @click="getList"></svg-icon>
+          <svg-icon icon="refresh" @click="getList"></svg-icon>
         </span>
       </div>
+    </div>
+    <div class="table-widget table-content">
+      <el-table
+        ref="multipleTableRef"
+        :data="remoteProShow"
+        :default-sort="{ prop: 'isChanged', order: 'descending' }"
+        @selection-change="selectMulData"
+        stripe
+      >
+        <el-table-column type="selection" width="55" />
+        <el-table-column type="index" width="60" align="center" label="序号">
+        </el-table-column>
+        <el-table-column
+          v-for="row in tableOptionShow"
+          :key="row.prop"
+          :prop="row.prop"
+          :label="row.label"
+          :width="row.width || 'auto'"
+          :align="row.align || 'center'"
+          :sortable="row.sortable"
+        >
+          <template #default="scope">
+            <template v-if="row.prop === 'shellStatus'">
+              <template v-if="scope.row.gitShell.ifEnd">
+                <el-popover placement="bottom" :width="200" trigger="click">
+                  <shell-res
+                    :shell="scope.row.gitShell.shell"
+                    :result="scope.row.gitShell.out"
+                  ></shell-res>
+                  <template #reference>
+                    <el-tag
+                      class="tag-status"
+                      :style="{
+                        color:
+                          SHELL_STATUS[`${scope.row.gitShell.status}`].color,
+                      }"
+                    >
+                      {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
+                      <svg-icon icon="info"></svg-icon>
+                    </el-tag>
+                  </template>
+                </el-popover>
+              </template>
+              <template v-else>
+                <el-tag
+                  :style="{
+                    color: SHELL_STATUS[`${scope.row.gitShell.status}`].color,
+                  }"
+                >
+                  {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
+                </el-tag>
+              </template>
+            </template>
+            <template v-else-if="row.prop === 'isChanged'">
+              <el-popover
+                v-if="scope.row.isChanged"
+                placement="bottom"
+                :width="200"
+                trigger="click"
+              >
+                <shell-res
+                  shell="git status"
+                  :result="scope.row.status"
+                ></shell-res>
+                <template #reference>
+                  <el-tag class="tag-status"
+                    >有变更 <svg-icon icon="info"></svg-icon
+                  ></el-tag>
+                </template>
+              </el-popover>
+              <el-tag v-else style="color: #333;">无</el-tag>
+            </template>
+            <template v-else-if="row.prop === 'branches'">
+              <!-- <el-select v-model="remoteBranch[scope.row.id]"> -->
+              <el-select v-model="scope.row.branch">
+                <el-option
+                  v-for="item in scope.row.branches"
+                  :key="item"
+                  :value="item"
+                  :label="item"
+                ></el-option>
+              </el-select>
+            </template>
+            <template v-else-if="row.prop === 'name'">
+              {{ scope.row.name }}
+              <template v-if="scope.row.remote === ''">
+                <label for="" style="color: #f56c6c;">(无remote地址)</label>
+              </template>
+            </template>
+            <template v-else>
+              {{ scope.row[row.prop] || "-" }}
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column label="描述" width="300">
+          <template #default="scope">
+            <el-input
+              v-model="scope.row.gitShell.comment"
+              placeholder="提交描述"
+              type="textarea"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="270">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              class="btn-cloud"
+              @click="pushItem(scope.row)"
+              :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
+            >
+              push
+            </el-button>
+            <el-button
+              type="primary"
+              class="btn-cloud"
+              @click="pullItem(scope.row)"
+              :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
+            >
+              pull
+            </el-button>
+            <span
+              class="link-span link-edit"
+              @click="editItem(scope.row)"
+              :disabled="scope.row.gitShell.ifRuning"
+            >
+              <svg-icon icon="edit"></svg-icon>
+            </span>
+            <span
+              class="link-span link-delete"
+              @click="deleteItem(scope.row)"
+              :disabled="scope.row.gitShell.ifRuning"
+            >
+              <svg-icon icon="delete"></svg-icon>
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
     <table-widget
       class="table-content"
@@ -410,135 +550,135 @@ const pullData = () => {
       :page-show="false"
       :stripe="true"
       :default-sort="{ prop: 'isChanged', order: 'descending' }"
-      @selection-change="selectMulData"
+      @select="selectMulData"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column type="index" width="60" align="center" label="序号">
-      </el-table-column>
-      <el-table-column
-        v-for="row in tableOptionShow"
-        :key="row.prop"
-        :prop="row.prop"
-        :label="row.label"
-        :width="row.width || 'auto'"
-        :align="row.align || 'center'"
-        :sortable="row.sortable"
-      >
-        <template #default="scope">
-          <template v-if="row.prop === 'shellStatus'">
-            <template v-if="scope.row.gitShell.ifEnd">
-              <el-popover placement="bottom" :width="200" trigger="click">
+        <el-table-column type="selection" width="55" />
+        <el-table-column type="index" width="60" align="center" label="序号">
+        </el-table-column>
+        <el-table-column
+          v-for="row in tableOptionShow"
+          :key="row.prop"
+          :prop="row.prop"
+          :label="row.label"
+          :width="row.width || 'auto'"
+          :align="row.align || 'center'"
+          :sortable="row.sortable"
+        >
+          <template #default="scope">
+            <template v-if="row.prop === 'shellStatus'">
+              <template v-if="scope.row.gitShell.ifEnd">
+                <el-popover placement="bottom" :width="200" trigger="click">
+                  <shell-res
+                    :shell="scope.row.gitShell.shell"
+                    :result="scope.row.gitShell.out"
+                  ></shell-res>
+                  <template #reference>
+                    <el-tag
+                      class="tag-status"
+                      :style="{
+                        color:
+                          SHELL_STATUS[`${scope.row.gitShell.status}`].color,
+                      }"
+                    >
+                      {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
+                      <svg-icon icon="info"></svg-icon>
+                    </el-tag>
+                  </template>
+                </el-popover>
+              </template>
+              <template v-else>
+                <el-tag
+                  :style="{
+                    color: SHELL_STATUS[`${scope.row.gitShell.status}`].color,
+                  }"
+                >
+                  {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
+                </el-tag>
+              </template>
+            </template>
+            <template v-else-if="row.prop === 'isChanged'">
+              <el-popover
+                v-if="scope.row.isChanged"
+                placement="bottom"
+                :width="200"
+                trigger="click"
+              >
                 <shell-res
-                  :shell="scope.row.gitShell.shell"
-                  :result="scope.row.gitShell.out"
+                  shell="git status"
+                  :result="scope.row.status"
                 ></shell-res>
                 <template #reference>
-                  <el-tag
-                    class="tag-status"
-                    :style="{
-                      color: SHELL_STATUS[`${scope.row.gitShell.status}`].color,
-                    }"
-                  >
-                    {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
-                    <svg-icon icon="info"></svg-icon>
-                  </el-tag>
+                  <el-tag class="tag-status"
+                    >有变更 <svg-icon icon="info"></svg-icon
+                  ></el-tag>
                 </template>
               </el-popover>
+              <el-tag v-else style="color: #333;">无</el-tag>
+            </template>
+            <template v-else-if="row.prop === 'branches'">
+              <el-select v-model="scope.row.branch">
+                <el-option
+                  v-for="item in scope.row.branches"
+                  :key="item"
+                  :value="item"
+                  :label="item"
+                ></el-option>
+              </el-select>
+            </template>
+            <template v-else-if="row.prop === 'name'">
+              {{ scope.row.name }}
+              <template v-if="scope.row.remote === ''">
+                <label for="" style="color: #f56c6c;">(无remote地址)</label>
+              </template>
             </template>
             <template v-else>
-              <el-tag
-                :style="{
-                  color: SHELL_STATUS[`${scope.row.gitShell.status}`].color,
-                }"
-              >
-                {{ SHELL_STATUS[`${scope.row.gitShell.status}`].label }}
-              </el-tag>
+              {{ scope.row[row.prop] || "-" }}
             </template>
           </template>
-          <template v-else-if="row.prop === 'isChanged'">
-            <el-popover
-              v-if="scope.row.isChanged"
-              placement="bottom"
-              :width="200"
-              trigger="click"
+        </el-table-column>
+        <el-table-column label="描述" width="300">
+          <template #default="scope">
+            <el-input
+              v-model="scope.row.gitShell.comment"
+              placeholder="提交描述"
+              type="textarea"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="270">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              class="btn-cloud"
+              @click="pushItem(scope.row)"
+              :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
             >
-              <shell-res
-                shell="git status"
-                :result="scope.row.status"
-              ></shell-res>
-              <template #reference>
-                <el-tag class="tag-status"
-                  >有变更 <svg-icon icon="info"></svg-icon
-                ></el-tag>
-              </template>
-            </el-popover>
-            <el-tag v-else style="color: #333;">无</el-tag>
+              push
+            </el-button>
+            <el-button
+              type="primary"
+              class="btn-cloud"
+              @click="pullItem(scope.row)"
+              :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
+            >
+              pull
+            </el-button>
+            <span
+              class="link-span link-edit"
+              @click="editItem(scope.row)"
+              :disabled="scope.row.gitShell.ifRuning"
+            >
+              <svg-icon icon="edit"></svg-icon>
+            </span>
+            <span
+              class="link-span link-delete"
+              @click="deleteItem(scope.row)"
+              :disabled="scope.row.gitShell.ifRuning"
+            >
+              <svg-icon icon="delete"></svg-icon>
+            </span>
           </template>
-          <template v-else-if="row.prop === 'branches'">
-            <!-- <el-select v-model="remoteBranch[scope.row.id]"> -->
-            <el-select v-model="scope.row.branch">
-              <el-option
-                v-for="item in scope.row.branches"
-                :key="item"
-                :value="item"
-                :label="item"
-              ></el-option>
-            </el-select>
-          </template>
-          <template v-else-if="row.prop === 'name'">
-            {{ scope.row.name }}
-            <template v-if="scope.row.remote === ''">
-              <label for="" style="color: #f56c6c;">(无remote地址)</label>
-            </template>
-          </template>
-          <template v-else>
-            {{ scope.row[row.prop] || "-" }}
-          </template>
-        </template>
-      </el-table-column>
-      <el-table-column label="描述" width="300">
-        <template #default="scope">
-          <el-input
-            v-model="scope.row.gitShell.comment"
-            placeholder="提交描述"
-            type="textarea"
-          />
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="270">
-        <template #default="scope">
-          <el-button
-            type="primary"
-            class="btn-cloud"
-            @click="pushItem(scope.row)"
-            :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
-          >
-            push
-          </el-button>
-          <el-button
-            type="primary"
-            class="btn-cloud"
-            @click="pullItem(scope.row)"
-            :disabled="scope.row.remote === '' || scope.row.gitShell.ifRuning"
-          >
-            pull
-          </el-button>
-          <span
-            class="link-span link-edit"
-            @click="editItem(scope.row)"
-            :disabled="scope.row.gitShell.ifRuning"
-          >
-            <svg-icon icon="edit"></svg-icon>
-          </span>
-          <span
-            class="link-span link-delete"
-            @click="deleteItem(scope.row)"
-            :disabled="scope.row.gitShell.ifRuning"
-          >
-            <svg-icon icon="delete"></svg-icon>
-          </span>
-        </template>
-      </el-table-column>
+        </el-table-column>
     </table-widget>
   </div>
   <el-dialog

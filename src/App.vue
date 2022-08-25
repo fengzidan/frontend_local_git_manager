@@ -12,6 +12,10 @@
 </template>
 
 <style>
+@import url('./assets/css/index.scss');
+/* body{
+  background: #fff;
+} */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
