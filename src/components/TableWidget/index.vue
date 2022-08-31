@@ -70,7 +70,6 @@ const handleClickRow = (row: any) => {
       :stripe="stripe"
       @selection-change="handleSelectionChange"
       @sort-change="handleSort"
-      @row-click="handleClickRow"
     >
       <slot></slot>
     </el-table>
