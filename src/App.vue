@@ -12,6 +12,7 @@
 </template>
 
 <style>
+@import "./assets/css/index.scss";
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -28,5 +29,35 @@
 }
 *:focus {
   outline: none;
+}
+.el-popover {
+  width: auto !important;
+}
+.el-button:focus,
+.el-button:hover {
+  border-color: inherit !important;
+  color: #fff !important;
+  background-color: #7371fc;
+}
+.el-select .el-select-tags-wrapper.has-prefix {
+  display: flex;
+  overflow-x: auto;
+}
+
+.el-table__inner-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.el-button.is-disabled,
+.el-button.is-disabled:focus,
+.el-button.is-disabled:hover {
+  color: var(--el-button-disabled-text-color) !important;
+  cursor: not-allowed;
+  background-image: none;
+  background-color: var(--el-button-disabled-bg-color) !important;
+  border-color: var(--el-button-disabled-border-color) !important;
 }
 </style>

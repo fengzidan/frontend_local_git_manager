@@ -35,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
 
 const router = createRouter({
   history: createWebHistory(
-    process.env.NODE_ENV === "production" ? "/" : "/remote-manager"
+    process.env.NODE_ENV === "production" ? "/remote-manager" : "/"
   ),
   routes,
 });

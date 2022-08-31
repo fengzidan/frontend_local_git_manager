@@ -6,4 +6,7 @@ import 'virtual:svg-icons-register'
 // const req = require.context("./svg", false, /\.svg$/);
 // requireAll(req);
 
-export default { component: { SvgIcon } };
+export default (Vue: any) => {
+    Vue.component('SvgIcon', SvgIcon)
+}
+// export default { component: { SvgIcon } };

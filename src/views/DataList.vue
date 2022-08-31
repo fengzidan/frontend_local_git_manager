@@ -358,7 +358,7 @@ const pullData = () => {
       <div class="right">
         <el-dropdown class="right-item">
           <el-button class="btn-multiple" type="primary">
-            新增<el-icon class="el-icon--right"><arrow-down /></el-icon>
+            新增<svg-icon icon="double-down"></svg-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>

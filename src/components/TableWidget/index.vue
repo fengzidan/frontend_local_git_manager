@@ -34,7 +34,7 @@ const props = defineProps({
     default: true,
   },
 });
-const emits = defineEmits(["select", "change", "sort"]);
+const emits = defineEmits(["selection-change", "change", "sort"]);
 const pageNum = computed(() => props.pageOption.pageNum);
 const pageSize = computed(() => props.pageOption.pageSize);
 const total = computed(() => props.pageOption.total);
@@ -42,7 +42,7 @@ const total = computed(() => props.pageOption.total);
 const multipleTableRef = ref<InstanceType<typeof ElTable>>();
 const handleSelectionChange = (selection = []) => {
   multipleSelection.value = selection;
-  emits("select", selection);
+  emits("selection-change", multipleSelection.value);
 };
 const handleSizeChange = (pageSize: Number) => {
   emits("change", pageNum, pageSize);
